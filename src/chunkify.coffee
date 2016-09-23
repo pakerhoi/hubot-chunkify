@@ -11,33 +11,35 @@
 #   chen-ye
 
 maxLength = process.env.HUBOT_CHUNKIFY_MAX or 320
-chunkExp = new RegExp('.{1,' + HUBOT_CHUNKIFY_MAX + '}', 'g')
+chunkExp = new RegExp('.{1,' + process.env.HUBOT_CHUNKIFY_MAX + '}', 'g')
 
 module.exports = (robot) ->
-        
-    _chunkify = (string, newstrings) ->
-        newstrings = []
-        if(string.length > maxLength)
-          while string.length > 0
-            # Split message at last line break, if it exists
-            chunk = string.substring(0, maxLength)
-            breakIndex = if chunk.lastIndexOf('\n') isnt -1 then chunk.lastIndexOf('\n') else maxLength
-            newstrings.push string.substring(0, breakIndex)
-            # Skip char if split on line break
-            breakIndex++ if breakIndex isnt maxLength
-            string = string.substring(breakIndex, string.length)
-        else 
-          newstrings.push(string)
 
-    robot.responseMiddleware (context, next, done) ->
-        return unless context.plaintext?
+  _chunkify = (string, newstrings) ->
+    newstrings = []
+    if(string.length > maxLength)
+      while string.length > 0
+# Split message at last line break, if it exists
+        chunk = string.substring(0, maxLength)
+        breakIndex = if chunk.lastIndexOf('\n') isnt -1 then chunk.lastIndexOf('\n') else maxLength
+        newstrings.push string.substring(0, breakIndex)
+        # Skip char if split on line break
+        breakIndex++ if breakIndex isnt maxLength
+        string = string.substring(breakIndex, string.length)
+    else
+      newstrings.push(string)
 
-        strings = context.strings
-        
-        newstrings = []
-        
-        _chunkify string, newstrings for string in strings
-            
-        context.strings = newstrings
-        
-        next()
+    newstrings
+
+  robot.responseMiddleware (context, next, done) ->
+    return unless context.plaintext?
+
+    strings = context.strings
+
+    newstrings = []
+
+    newstrings = _chunkify string, newstrings for string in strings
+
+    context.strings = newstrings
+
+    next()
